@@ -1,63 +1,158 @@
-import MidiPlayer from 'midi-player-js';
-import SoundFont from 'soundfont-player';
-import axios from "axios";
 import testSong from './midi/SuperMarioBrothers.midi';
-import { handleMIDI } from './playHelpers.js';
-import { loadInstruments } from './instruments.js';
+import { initializeOrchestra } from './midiHelpers.js';
 
-/****** 1) Initialize everything ******/
+/*
+  List of available instruments:
+
+  accordion
+  acoustic_bass
+  acoustic_grand_piano
+  acoustic_guitar_nylon
+  acoustic_guitar_steel
+  agogo
+  alto_sax
+  applause
+  bagpipe
+  banjo
+  baritone_sax
+  bassoon
+  bird_tweet
+  blown_bottle
+  brass_section
+  breath_noise
+  bright_acoustic_piano
+  celesta
+  cello
+  choir_aahs
+  church_organ
+  clarinet
+  clavinet
+  contrabass
+  distortion_guitar
+  drawbar_organ
+  dulcimer
+  electric_bass_finger
+  electric_bass_pick
+  electric_grand_piano
+  electric_guitar_clean
+  electric_guitar_jazz
+  electric_guitar_muted
+  electric_piano_1
+  electric_piano_2
+  english_horn
+  fiddle
+  flute
+  french_horn
+  fretless_bass
+  fx_1_rain
+  fx_2_soundtrack
+  fx_3_crystal
+  fx_4_atmosphere
+  fx_5_brightness
+  fx_6_goblins
+  fx_7_echoes
+  fx_8_scifi
+  glockenspiel
+  guitar_fret_noise
+  guitar_harmonics
+  gunshot
+  harmonica
+  harpsichord
+  helicopter
+  honkytonk_piano
+  kalimba
+  koto
+  lead_1_square
+  lead_2_sawtooth
+  lead_3_calliope
+  lead_4_chiff
+  lead_5_charang
+  lead_6_voice
+  lead_7_fifths
+  lead_8_bass_lead
+  marimba
+  melodic_tom
+  music_box
+  muted_trumpet
+  oboe
+  ocarina
+  orchestra_hit
+  orchestral_harp
+  overdriven_guitar
+  pad_1_new_age
+  pad_2_warm
+  pad_3_polysynth
+  pad_4_choir
+  pad_5_bowed
+  pad_6_metalic
+  pad_7_halo
+  pad_8_sweep
+  pan_flute
+  percussion // ERROR with this one.
+  percussive_organ
+  piccolo
+  pizzicato_strings
+  recorder
+  reed_organ
+  reverse_cymbal
+  rock_organ
+  seashore
+  shakuhachi
+  shamisen
+  shanai
+  sitar
+  slap_bass_1
+  slap_bass_2
+  soprano_sax
+  steel_drums
+  string_ensemble_1
+  string_ensemble_2
+  synth_bass_1
+  synth_bass_2
+  synth_brass_1
+  synth_brass_2
+  synth_choir
+  synth_drum
+  synth_strings_1
+  synth_strings_2
+  taiko_drum
+  tango_accordion
+  telephone_ring
+  tenor_sax
+  timpani
+  tinkle_bell
+  tremolo_strings
+  trombone
+  trumpet
+  tuba
+  tubular_bells
+  vibraphone
+  viola
+  violin
+  voice_oohs
+  whistle
+  woodblock
+  xylophone
+*/
+
+const trackAssignments = {
+  // TRACK 1 IS RESERVED FOR METADATA. Start at 2.
+  2: 'steel_drums',
+  3: 'steel_drums',
+  4: 'tuba',
+  5: 'synth_drum',
+}
+
+const PlayerPromise = initializeOrchestra(trackAssignments, testSong);
 const windowLoaded = new Promise(resolve => {window.onload = () => {resolve()}});
-const ac = new AudioContext();
-const instruments = loadInstruments([
-  'acoustic_grand_piano',
-  'banjo',
-  'synth_drum',
-], ac);
-const songBuffer = axios.get(testSong, {
-  responseType: "arraybuffer",
-  maxRedirects: 5
-})
-.then(response => {
-  const { data: midiArrayBuffer } = response;
-  return midiArrayBuffer;
-});
 
-/****** 2) Configure the MIDI stuff ******/
-Promise.all([instruments, songBuffer, windowLoaded]).then((data)=>{
-  // gather the instruments
-  const { 
-    acoustic_grand_piano,
-    banjo,
-    synth_drum,
-  } = data[0];
+Promise.all([PlayerPromise, windowLoaded]).then((data) => {
+  const Player = data[0];
 
-  // arrange the orchestra
-  const parts = {
-    2: acoustic_grand_piano,
-    3: acoustic_grand_piano,
-    4: banjo,
-    5: synth_drum,
-  }
-
-  // configure the player
-  function onMIDI(event) {handleMIDI(parts, ac, event)}
-  const Player = new MidiPlayer.Player((event = {}) => {onMIDI(event)});
-
-  // Initialize the MIDI file
-  const buffer = data[1];
-  Player.loadArrayBuffer(buffer);
-
-  /****** 3) Configure the DOM ******/
-  // Wrangle the DOM nodes
-  const pianoButton = document.getElementById('piano');
-  const banjoButton = document.getElementById('banjo');
   const playButton = document.getElementById('play');
   const pauseButton = document.getElementById('pause');
   const stopButton = document.getElementById('stop');
 
-  // Assign button behavior
-  pianoButton.addEventListener('click', ()=>{ piano.play('C4') });
-  banjoButton.addEventListener('click', ()=>{ banjo.play('C4') });
   playButton.addEventListener('click', ()=>{ Player.play() });
   pauseButton.addEventListener('click', ()=>{ Player.pause() });
   stopButton.addEventListener('click', ()=>{ Player.stop() });
