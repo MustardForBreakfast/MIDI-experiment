@@ -2,6 +2,7 @@ import MidiPlayer from 'midi-player-js';
 import SoundFont from 'soundfont-player';
 import axios from "axios";
 import testSong from './midi/SuperMarioBrothers.midi';
+import { handleMIDI } from './playHelpers.js';
 
 /****** 1) Initialize everything ******/
 
@@ -19,7 +20,7 @@ const songBuffer = axios.get(testSong, {
 const pianoPromise = Soundfont.instrument(ac, 'acoustic_grand_piano');
 const banjoPromise = Soundfont.instrument(ac, 'banjo');
 const drumPromise = Soundfont.instrument(ac, 'synth_drum');
-const instruments = Promise.all([pianoPromise, banjoPromise, drumPromise]);
+const instPromises = Promise.all([pianoPromise, banjoPromise, drumPromise]);
 
 const windowLoaded = new Promise(resolve => {window.onload = () => {resolve()}});
 
@@ -29,23 +30,31 @@ const windowLoaded = new Promise(resolve => {window.onload = () => {resolve()}})
 /****** 2) Set stuff up once we've got all the resources loaded in. ******/
 
 
-Promise.all([instruments, songBuffer, windowLoaded]).then((data)=>{
+Promise.all([instPromises, songBuffer, windowLoaded]).then((data)=>{
+
+  // Configure player
   const instruments = data[0];
   const piano = instruments[0];
   const banjo = instruments[1];
   const drum = instruments[2];
 
-  const buffer = data[1];
+  const parts = {
+    2: piano,
+    3: piano,
+    4: banjo,
+    5: drum
+  }
 
-  const Player = new MidiPlayer.Player( event => {
-    if (event.name == 'Note on') {
-      piano.play(event.noteName, ac.currentTime, {gain:event.velocity/100});
-      //document.querySelector('#track-' + event.track + ' code').innerHTML = JSON.stringify(event);
-    }
-    console.log(event);
-  });
+  function onMIDI(event) {
+    handleMIDI(parts, ac, event);
+  }
+
+  const Player = new MidiPlayer.Player((event = {}) => {onMIDI(event)});
+
+
 
   // Load the MIDI file
+  const buffer = data[1];
   Player.loadArrayBuffer(buffer);
 
   // Wrangle DOM nodes
