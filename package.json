@@ -6,6 +6,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "browserfs": "^1.4.3",
+    "lodash.throttle": "^4.1.1",
     "midi-player-js": "^2.0.3",
     "soundfont-player": "^0.10.6"
   },

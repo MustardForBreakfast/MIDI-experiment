@@ -1,5 +1,6 @@
 import testSong from './midi/SuperMarioBrothers.midi';
 import { initializeOrchestra } from './midiHelpers.js';
+import { changeTempo } from './playerUtils.js';
 
 /*
 List of Available instruments:
@@ -163,6 +164,7 @@ List of Available instruments:
   telephone_ring
 */
 
+const startingTempo = 120;
 
 const trackAssignments = {
   // TRACK 1 IS RESERVED FOR METADATA. Start at 2.
@@ -170,7 +172,7 @@ const trackAssignments = {
   2: 'steel_drums',
   3: 'steel_drums',
   4: 'tuba',
-  // 5: 'synth_drum',
+  5: 'synth_drum',
 }
 
 const PlayerPromise = initializeOrchestra(trackAssignments, testSong);
@@ -178,12 +180,17 @@ const windowLoaded = new Promise(resolve => {window.onload = () => {resolve()}})
 
 Promise.all([PlayerPromise, windowLoaded]).then((data) => {
   const Player = data[0];
+  Player.setTempo(startingTempo);
 
   const playButton = document.getElementById('play');
   const pauseButton = document.getElementById('pause');
   const stopButton = document.getElementById('stop');
+  const tempoField = document.getElementById('tempo');
+
+  tempoField.value = startingTempo;
 
   playButton.addEventListener('click', ()=>{ Player.play() });
   pauseButton.addEventListener('click', ()=>{ Player.pause() });
   stopButton.addEventListener('click', ()=>{ Player.stop() });
+  tempoField.addEventListener('change', (e)=>{changeTempo(e.target.value, Player)});
 })
